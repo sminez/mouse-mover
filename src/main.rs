@@ -2,7 +2,6 @@ use core_graphics::{
     display::{CGDisplay, CGPoint, CGRect},
     event::{CGEvent, CGEventTapLocation, CGEventType, CGMouseButton},
     event_source::{CGEventSource, CGEventSourceStateID},
-    //window::{self, create_description_from_array, create_window_list},
 };
 use std::{env, process::exit};
 
@@ -12,7 +11,10 @@ const KNOWN_ARGS: [&str; 4] = ["--back", "--no-click", "-h", "--help"];
 // https://github.com/matschik/mouse-macos/blob/main/src/main.cpp#L90-L98 for sending clicks?
 fn main() {
     let args: Vec<_> = env::args().skip(1).collect();
-    let unknown: Vec<_> = args.iter().filter(|a| !KNOWN_ARGS.contains(&a.as_str())).collect();
+    let unknown: Vec<_> = args
+        .iter()
+        .filter(|a| !KNOWN_ARGS.contains(&a.as_str()))
+        .collect();
     if !unknown.is_empty() {
         eprintln!("unknown args: {unknown:?}");
         usage();
@@ -39,7 +41,7 @@ fn warp(forward: bool, click: bool) -> Option<()> {
     let displays: Vec<_> = CGDisplay::active_displays()
         .ok()?
         .into_iter()
-        .map(|id| CGDisplay::new(id))
+        .map(CGDisplay::new)
         .collect();
 
     if displays.len() == 1 {
@@ -52,17 +54,11 @@ fn warp(forward: bool, click: bool) -> Option<()> {
         .position(|&d| d.bounds().contains(&current_pos))?;
 
     let j = if forward {
-        if i == displays.len() - 1 {
-            0
-        } else {
-            i + 1
-        }
+        if i == displays.len() - 1 { 0 } else { i + 1 }
+    } else if i == 0 {
+        displays.len() - 1
     } else {
-        if i == 0 {
-            displays.len() - 1
-        } else {
-            i - 1
-        }
+        i - 1
     };
 
     let p = mid_point(displays[j].bounds());
@@ -102,21 +98,3 @@ fn left_click_at(p: CGPoint) -> Option<()> {
 
     Some(())
 }
-
-// Look at these for more detail on the a11y API needed for moving windows around:
-//   https://docs.rs/accessibility/latest/accessibility/ui_element/struct.AXUIElement.html
-//   /Users/innes/repos/public/AeroSpace/Sources/AppBundle/tree/MacWindow.swift
-
-/*
-fn list_wins() {
-    let arr = create_window_list(
-        window::kCGWindowListOptionOnScreenOnly | window::kCGWindowListExcludeDesktopElements,
-        window::kCGNullWindowID,
-    )
-    .unwrap();
-
-    let wins = create_description_from_array(arr);
-
-    println!("{wins:?}");
-}
-*/
